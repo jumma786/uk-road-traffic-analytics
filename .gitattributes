@@ -1,3 +1,7 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
 data/raw/*.csv filter=lfs diff=lfs merge=lfs -text
 data/processed/*.csv filter=lfs diff=lfs merge=lfs -text
+data/raw/*.shp filter=lfs diff=lfs merge=lfs -text
+data/raw/*.shx filter=lfs diff=lfs merge=lfs -text
+data/raw/*.dbf filter=lfs diff=lfs merge=lfs -text
+data/raw/*.prj filter=lfs diff=lfs merge=lfs -text
