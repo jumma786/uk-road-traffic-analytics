@@ -64,10 +64,6 @@ CREATE TABLE FactTrafficFlowDirection (
     LoadDate DATETIME DEFAULT GETDATE()
 );
 
-CREATE INDEX IX_Fact_Date ON FactTrafficFlowDirection(DateKey);
-CREATE INDEX IX_Fact_Region ON FactTrafficFlowDirection(RegionKey);
-CREATE INDEX IX_Fact_LA ON FactTrafficFlowDirection(LocalAuthorityKey);
-CREATE INDEX IX_Fact_CP ON FactTrafficFlowDirection(CountPointKey);
 
 
 
@@ -79,3 +75,39 @@ SELECT
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE'
 ORDER BY TABLE_NAME;
+
+
+USE UK_Road_Traffic_DW;
+
+-- Clear all dimension tables (safe, they have no foreign key constraints yet)
+TRUNCATE TABLE DimDate;
+TRUNCATE TABLE DimRegion;
+TRUNCATE TABLE DimLocalAuthority;
+TRUNCATE TABLE DimCountPoint;
+
+USE UK_Road_Traffic_DW;
+
+SELECT 'DimDate' as TableName, COUNT(*) as TotalRows FROM DimDate
+UNION ALL
+SELECT 'DimRegion', COUNT(*) FROM DimRegion
+UNION ALL
+SELECT 'DimLocalAuthority', COUNT(*) FROM DimLocalAuthority
+UNION ALL
+SELECT 'DimCountPoint', COUNT(*) FROM DimCountPoint;
+
+
+
+USE UK_Road_Traffic_DW;
+
+SELECT 
+    'DimDate' as TableName, 
+    COUNT(*) as TotalRows 
+FROM DimDate
+UNION ALL
+SELECT 'DimRegion', COUNT(*) FROM DimRegion
+UNION ALL
+SELECT 'DimLocalAuthority', COUNT(*) FROM DimLocalAuthority
+UNION ALL
+SELECT 'DimCountPoint', COUNT(*) FROM DimCountPoint
+UNION ALL
+SELECT 'FactTrafficFlowDirection', COUNT(*) FROM FactTrafficFlowDirection;
