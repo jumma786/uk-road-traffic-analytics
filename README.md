@@ -5,19 +5,23 @@ A data warehouse and analytics platform for UK Department for Transport (DfT) ro
 ## Architecture
 
 ```
-data/raw/*.csv ──► scripts/etl_pipeline.py ──► SQL Server (UK_Road_Traffic_DW)
-                                                    │
-                                                    ├── DimDate
-                                                    ├── DimRegion
-                                                    ├── DimLocalAuthority
-                                                    ├── DimCountPoint
-                                                    └── FactTrafficFlowDirection
-                                                         │
-                                            sql/business_queries.sql
-                                                         │
-                                         scripts/export_reports.py ──► reports/*.csv
-                                                         │
-                                                    Power BI Dashboard
+DfT API ──► src/extract/ ──► data/raw/*.csv
+                                  │
+                          src/transform/ (cleaning)
+                                  │
+                          src/load/ ──► SQL Server (UK_Road_Traffic_DW)
+                                            │
+                                            ├── DimDate
+                                            ├── DimRegion
+                                            ├── DimLocalAuthority
+                                            ├── DimCountPoint
+                                            └── FactTrafficFlowDirection
+                                                 │
+                                    sql/business_queries.sql
+                                                 │
+                                 scripts/export_reports.py ──► reports/*.csv
+                                                 │
+                                            Power BI Dashboard
 ```
 
 ## Data Sources
@@ -60,24 +64,25 @@ pip install -r requirements.txt
 
 Run the SQL scripts in order against your SQL Server instance:
 
-```sql
--- 1. Create database
+```bash
 sqlcmd -i sql/create_database.sql
-
--- 2. Create tables (star schema)
 sqlcmd -i sql/create_tables.sql
-
--- 3. Create indexes
 sqlcmd -i sql/indexes.sql
 ```
 
-### Run the ETL Pipeline
+### Extract Data from DfT API
 
 ```bash
-python scripts/etl_pipeline.py --server YOUR_SERVER --database UK_Road_Traffic_DW
+python src/extract/download_traffic_flow_by_direction.py
+python src/extract/download_data.py
 ```
 
-This loads dimensions first (DimDate, DimRegion, DimLocalAuthority, DimCountPoint), then the fact table with foreign key lookups.
+### Load into Data Warehouse
+
+```bash
+python src/load/load_dimensions.py
+python src/load/load_fact_table.py
+```
 
 ### Export Reports
 
@@ -102,19 +107,35 @@ Exports all 6 business queries as CSV files to `reports/`.
 
 ```
 ├── data/
-│   ├── raw/                  # Source CSV and shapefile data
-│   ├── processed/            # Derived datasets (GeoJSON, aggregated CSV)
-│   ├── staging/              # ETL intermediate files
-│   └── sql_exports/          # Query result exports
-├── notebooks/                # Exploratory analysis (API discovery)
-├── powerbi/                  # Power BI dashboard files
-├── reports/                  # Exported business query results
+│   ├── metadata/             Traffic data documentation (PDF)
+│   ├── raw/                  Source CSVs and shapefiles
+│   ├── processed/            Derived datasets (GeoJSON, aggregated CSV)
+│   ├── sql_exports/          Query result exports
+│   └── staging/              ETL intermediate files
+├── notebooks/
+│   ├── exploration.ipynb     Data exploration and shapefile processing
+│   └── Untitled.ipynb        API discovery and endpoint testing
+├── powerbi/                  Power BI dashboard setup guide
+├── reports/                  Exported business query results
 ├── scripts/
-│   ├── etl_pipeline.py       # Main ETL pipeline
-│   └── export_reports.py     # Business query export script
-└── sql/
-    ├── create_database.sql   # Database creation
-    ├── create_tables.sql     # Star schema DDL
-    ├── indexes.sql           # Performance indexes
-    └── business_queries.sql  # Analytical queries
+│   ├── export_reports.py     Business query CSV exporter
+│   ├── check_all.py          Data file inventory check
+│   ├── check_all_files.py    Extended file format check
+│   ├── check_data.py         Direction data validation
+│   └── check_relationship.py Dataset relationship verification
+├── sql/
+│   ├── create_database.sql   Database creation
+│   ├── create_tables.sql     Star schema DDL
+│   ├── indexes.sql           Performance indexes
+│   └── business_queries.sql  Analytical queries
+└── src/
+    ├── extract/              DfT API data downloaders
+    │   ├── data.py           API endpoint testing
+    │   ├── download_data.py  Bulk AADF download (100K sample)
+    │   └── download_traffic_flow_by_direction.py  Full directional download
+    ├── load/                 SQL Server loaders
+    │   ├── load_dimensions.py   Dimension table ETL (DimDate, DimRegion, etc.)
+    │   └── load_fact_table.py   Fact table ETL with chunked inserts
+    ├── transform/            Data cleaning and transformation
+    └── utils/                Shared utilities
 ```

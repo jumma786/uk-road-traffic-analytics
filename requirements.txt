@@ -1,5 +1,6 @@
 pandas>=2.0
 pyodbc>=5.0
+sqlalchemy>=2.0
 geopandas>=0.14
 requests>=2.31
 openpyxl>=3.1

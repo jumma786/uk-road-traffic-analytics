@@ -1,0 +1,537 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "UK Road Traffic Analytics",
+    "languages": ["SQL"],
+    "frameworks": ["SQL Server (T-SQL)"],
+    "description": "A data warehouse for UK road traffic analytics using a star schema design with dimension and fact tables, ETL pipeline loading 1.1M+ directional traffic flow records, and business intelligence queries for regional traffic analysis, year-over-year growth, and geospatial insights.",
+    "analyzedAt": "2026-06-19T00:00:00Z",
+    "gitCommitHash": "d1dc0b63acf324ea02291f55acda1ed64fa5bbed"
+  },
+  "nodes": [
+    {
+      "id": "file:sql/create_database.sql",
+      "type": "file",
+      "name": "create_database.sql",
+      "filePath": "sql/create_database.sql",
+      "summary": "Creates the UK_Road_Traffic_DW data warehouse database on SQL Server.",
+      "tags": ["database", "ddl", "initialization"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:sql/create_tables.sql",
+      "type": "file",
+      "name": "create_tables.sql",
+      "filePath": "sql/create_tables.sql",
+      "summary": "Defines the star schema with 4 dimension tables (DimDate, DimRegion, DimLocalAuthority, DimCountPoint) and 1 fact table (FactTrafficFlowDirection) with foreign key relationships. Also includes utility queries for table verification and row counts.",
+      "tags": ["ddl", "star-schema", "dimensions", "fact-table"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:sql/business_queries.sql",
+      "type": "file",
+      "name": "business_queries.sql",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Contains 6 analytical SQL queries: regional traffic summary, top-10 busiest roads, year-over-year growth trend, HGV vs passenger vehicle mix by region, local authority 5-year growth comparison, and road category distribution with geospatial traffic hotspot mapping.",
+      "tags": ["analytics", "business-intelligence", "reporting", "geospatial"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:sql/indexes.sql",
+      "type": "file",
+      "name": "indexes.sql",
+      "filePath": "sql/indexes.sql",
+      "summary": "Creates non-clustered indexes on the fact table's 4 foreign key columns (DateKey, RegionKey, LocalAuthorityKey, CountPointKey) to optimize join performance for analytical queries.",
+      "tags": ["indexes", "performance", "optimization"],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:sql/create_tables.sql:DimDate",
+      "type": "table",
+      "name": "DimDate",
+      "filePath": "sql/create_tables.sql",
+      "summary": "Date dimension table with calendar attributes: DateKey (PK), FullDate, Year, Quarter, Month, MonthName, Day, DayOfWeek, DayName, IsWeekend, and FiscalYear. Enables time-based slicing of traffic data.",
+      "tags": ["dimension", "date", "calendar", "time-intelligence"]
+    },
+    {
+      "id": "table:sql/create_tables.sql:DimRegion",
+      "type": "table",
+      "name": "DimRegion",
+      "filePath": "sql/create_tables.sql",
+      "summary": "Region dimension table storing UK geographic regions with RegionKey (identity PK), RegionID, RegionName, and RegionONSCode. Maps to source data region_id/region_name/region_ons_code columns.",
+      "tags": ["dimension", "geography", "region"]
+    },
+    {
+      "id": "table:sql/create_tables.sql:DimLocalAuthority",
+      "type": "table",
+      "name": "DimLocalAuthority",
+      "filePath": "sql/create_tables.sql",
+      "summary": "Local authority dimension with foreign key to DimRegion, storing LocalAuthorityID, Name, and Code. Represents the administrative geography level below region.",
+      "tags": ["dimension", "geography", "local-authority"]
+    },
+    {
+      "id": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "table",
+      "name": "DimCountPoint",
+      "filePath": "sql/create_tables.sql",
+      "summary": "Count point dimension storing traffic sensor metadata: CountPointID, RoadName, RoadCategory, RoadType, Latitude/Longitude coordinates, and LinkLengthKm. Each count point is a physical traffic measurement location.",
+      "tags": ["dimension", "count-point", "road", "geospatial"]
+    },
+    {
+      "id": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "table",
+      "name": "FactTrafficFlowDirection",
+      "filePath": "sql/create_tables.sql",
+      "summary": "Central fact table with 1.1M+ rows recording directional AADF traffic counts per count point per year. Contains 12 vehicle-type measures (PedalCycles through AllMotorVehicles) plus DirectionOfTravel. Links to all 4 dimension tables via foreign keys. LoadDate tracks ETL timestamp.",
+      "tags": ["fact-table", "traffic-flow", "measures", "aadf"],
+      "complexity": "complex"
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:regional-traffic-summary",
+      "type": "endpoint",
+      "name": "Regional Traffic Summary",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Aggregates total motor vehicles, HGVs, and all vehicles by region for 2023. Joins FactTrafficFlowDirection with DimRegion and DimDate, grouped by RegionName, ordered by total descending.",
+      "tags": ["query", "regional", "aggregation", "2023"]
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:top-busiest-roads",
+      "type": "endpoint",
+      "name": "Top 10 Busiest Roads",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Identifies the 10 roads with highest total traffic since 2020, filtering for roads with over 1M total motor vehicles. Shows RoadName, RoadCategory, TotalTraffic, and AvgDailyFlow.",
+      "tags": ["query", "top-n", "busiest-roads", "ranking"]
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:yoy-growth-trend",
+      "type": "endpoint",
+      "name": "Year-over-Year Growth Trend",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Uses CTE with LAG window function to calculate annual traffic growth percentage across all years. Shows TotalTraffic, PrevYear, and YoY_GrowthPct for trend analysis.",
+      "tags": ["query", "trend", "year-over-year", "window-function", "cte"]
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:hgv-passenger-mix",
+      "type": "endpoint",
+      "name": "HGV vs Passenger Vehicle Mix",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Compares heavy goods vehicle traffic to passenger vehicle traffic by region, calculating HGV percentage of total motor vehicles. Useful for freight corridor identification.",
+      "tags": ["query", "vehicle-mix", "hgv", "freight", "regional"]
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:la-growth-comparison",
+      "type": "endpoint",
+      "name": "Local Authority 5-Year Growth",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Uses CTE with PIVOT-style CASE expressions to compare 2018 vs 2023 traffic per local authority, calculating 5-year growth percentage. Identifies fastest-growing and declining areas.",
+      "tags": ["query", "growth", "local-authority", "comparison", "cte"]
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:road-category-distribution",
+      "type": "endpoint",
+      "name": "Road Category Traffic Distribution",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Aggregates traffic by road category (Motorway, A-road, B-road, etc.) showing count point coverage and average flow per point.",
+      "tags": ["query", "road-category", "distribution"]
+    },
+    {
+      "id": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "type": "endpoint",
+      "name": "Geospatial Traffic Hotspots",
+      "filePath": "sql/business_queries.sql",
+      "summary": "Returns lat/long coordinates with traffic volumes for 2023 count points exceeding 50K total motor vehicles. Designed for Power BI map visualization, joining all 4 dimensions to the fact table.",
+      "tags": ["query", "geospatial", "hotspot", "map-visualization", "powerbi"]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:sql/create_database.sql",
+      "target": "file:sql/create_tables.sql",
+      "type": "depends_on",
+      "label": "Database must exist before tables are created",
+      "weight": 0.6
+    },
+    {
+      "source": "file:sql/create_tables.sql",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/create_tables.sql",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/create_tables.sql",
+      "target": "table:sql/create_tables.sql:DimLocalAuthority",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/create_tables.sql",
+      "target": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/create_tables.sql",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "table:sql/create_tables.sql:DimLocalAuthority",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "depends_on",
+      "label": "FK: RegionKey references DimRegion",
+      "weight": 0.6
+    },
+    {
+      "source": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "depends_on",
+      "label": "FK: DateKey references DimDate",
+      "weight": 0.6
+    },
+    {
+      "source": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "target": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "depends_on",
+      "label": "FK: CountPointKey references DimCountPoint",
+      "weight": 0.6
+    },
+    {
+      "source": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "target": "table:sql/create_tables.sql:DimLocalAuthority",
+      "type": "depends_on",
+      "label": "FK: LocalAuthorityKey references DimLocalAuthority",
+      "weight": 0.6
+    },
+    {
+      "source": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "depends_on",
+      "label": "FK: RegionKey references DimRegion",
+      "weight": 0.6
+    },
+    {
+      "source": "file:sql/indexes.sql",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "configures",
+      "label": "Creates 4 non-clustered indexes on FK columns",
+      "weight": 0.6
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "file:sql/create_tables.sql",
+      "type": "depends_on",
+      "label": "All queries read from tables defined here",
+      "weight": 0.6
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "label": "All 6 queries use the fact table as primary source",
+      "weight": 0.7
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "reads_from",
+      "label": "4 of 6 queries join to DimRegion",
+      "weight": 0.7
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "reads_from",
+      "label": "3 of 6 queries join to DimDate for year filtering",
+      "weight": 0.7
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "reads_from",
+      "label": "3 of 6 queries join to DimCountPoint for road/geo data",
+      "weight": 0.7
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "table:sql/create_tables.sql:DimLocalAuthority",
+      "type": "reads_from",
+      "label": "2 of 6 queries join to DimLocalAuthority",
+      "weight": 0.7
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:regional-traffic-summary",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:top-busiest-roads",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:yoy-growth-trend",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:hgv-passenger-mix",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:la-growth-comparison",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:road-category-distribution",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:sql/business_queries.sql",
+      "target": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:regional-traffic-summary",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:regional-traffic-summary",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:regional-traffic-summary",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:top-busiest-roads",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:top-busiest-roads",
+      "target": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:top-busiest-roads",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:yoy-growth-trend",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:yoy-growth-trend",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:hgv-passenger-mix",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:hgv-passenger-mix",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:la-growth-comparison",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:la-growth-comparison",
+      "target": "table:sql/create_tables.sql:DimLocalAuthority",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:la-growth-comparison",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:road-category-distribution",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:road-category-distribution",
+      "target": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "target": "table:sql/create_tables.sql:FactTrafficFlowDirection",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "target": "table:sql/create_tables.sql:DimCountPoint",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "target": "table:sql/create_tables.sql:DimRegion",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "target": "table:sql/create_tables.sql:DimLocalAuthority",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "endpoint:sql/business_queries.sql:geospatial-hotspots",
+      "target": "table:sql/create_tables.sql:DimDate",
+      "type": "reads_from",
+      "weight": 0.7
+    },
+    {
+      "source": "file:sql/indexes.sql",
+      "target": "file:sql/create_tables.sql",
+      "type": "depends_on",
+      "label": "Indexes reference columns defined in create_tables",
+      "weight": 0.6
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:database-setup",
+      "name": "Database Setup",
+      "description": "Database initialization — creates the UK_Road_Traffic_DW database instance.",
+      "nodeIds": ["file:sql/create_database.sql"]
+    },
+    {
+      "id": "layer:schema-definition",
+      "name": "Schema Definition",
+      "description": "Star schema DDL — 4 dimension tables and 1 fact table with foreign key relationships forming the core data model.",
+      "nodeIds": [
+        "file:sql/create_tables.sql",
+        "table:sql/create_tables.sql:DimDate",
+        "table:sql/create_tables.sql:DimRegion",
+        "table:sql/create_tables.sql:DimLocalAuthority",
+        "table:sql/create_tables.sql:DimCountPoint",
+        "table:sql/create_tables.sql:FactTrafficFlowDirection"
+      ]
+    },
+    {
+      "id": "layer:performance-optimization",
+      "name": "Performance Optimization",
+      "description": "Index definitions that optimize query performance on the fact table's foreign key join columns.",
+      "nodeIds": ["file:sql/indexes.sql"]
+    },
+    {
+      "id": "layer:business-analytics",
+      "name": "Business Analytics",
+      "description": "Analytical queries for traffic reporting — regional summaries, trend analysis, vehicle mix, growth comparisons, and geospatial hotspot mapping.",
+      "nodeIds": [
+        "file:sql/business_queries.sql",
+        "endpoint:sql/business_queries.sql:regional-traffic-summary",
+        "endpoint:sql/business_queries.sql:top-busiest-roads",
+        "endpoint:sql/business_queries.sql:yoy-growth-trend",
+        "endpoint:sql/business_queries.sql:hgv-passenger-mix",
+        "endpoint:sql/business_queries.sql:la-growth-comparison",
+        "endpoint:sql/business_queries.sql:road-category-distribution",
+        "endpoint:sql/business_queries.sql:geospatial-hotspots"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Database Initialization",
+      "description": "The project starts by creating a dedicated SQL Server data warehouse called UK_Road_Traffic_DW. This is the foundation — all tables, indexes, and queries operate within this database.",
+      "nodeIds": ["file:sql/create_database.sql"]
+    },
+    {
+      "order": 2,
+      "title": "Star Schema Design",
+      "description": "The data model follows a classic star schema pattern. Four dimension tables (DimDate, DimRegion, DimLocalAuthority, DimCountPoint) surround a central fact table. Each dimension captures a different analytical axis: time, geography (two levels), and measurement location.",
+      "nodeIds": [
+        "table:sql/create_tables.sql:DimDate",
+        "table:sql/create_tables.sql:DimRegion",
+        "table:sql/create_tables.sql:DimLocalAuthority",
+        "table:sql/create_tables.sql:DimCountPoint"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Fact Table — The Heart of the Warehouse",
+      "description": "FactTrafficFlowDirection is the central fact table with 1.1M+ rows. Each row records directional AADF (Annual Average Daily Flow) traffic counts at a specific count point for a given year. It stores 12 vehicle-type measures from pedal cycles to articulated HGVs, linked to all 4 dimensions via foreign keys.",
+      "nodeIds": ["table:sql/create_tables.sql:FactTrafficFlowDirection"]
+    },
+    {
+      "order": 4,
+      "title": "Performance Indexes",
+      "description": "Four non-clustered indexes are created on the fact table's foreign key columns. These dramatically speed up the JOIN operations that every analytical query relies on, since the fact table has over 1 million rows.",
+      "nodeIds": ["file:sql/indexes.sql"]
+    },
+    {
+      "order": 5,
+      "title": "Regional and Temporal Analysis",
+      "description": "The business queries begin with broad aggregations — total traffic by region for 2023, and a year-over-year growth trend using window functions (LAG). These answer 'where is traffic heaviest?' and 'how is traffic changing over time?'",
+      "nodeIds": [
+        "endpoint:sql/business_queries.sql:regional-traffic-summary",
+        "endpoint:sql/business_queries.sql:yoy-growth-trend"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "Deep-Dive Analytics",
+      "description": "More targeted queries drill into specific dimensions: the top 10 busiest roads, HGV vs passenger vehicle mix by region (freight corridor analysis), local authority 5-year growth comparison (2018 vs 2023), and road category distribution. These use CTEs, HAVING filters, and CASE-based pivots.",
+      "nodeIds": [
+        "endpoint:sql/business_queries.sql:top-busiest-roads",
+        "endpoint:sql/business_queries.sql:hgv-passenger-mix",
+        "endpoint:sql/business_queries.sql:la-growth-comparison",
+        "endpoint:sql/business_queries.sql:road-category-distribution"
+      ]
+    },
+    {
+      "order": 7,
+      "title": "Geospatial Visualization Layer",
+      "description": "The final query outputs lat/long coordinates with traffic volumes for high-traffic count points (>50K vehicles in 2023). This is designed to feed Power BI map visualizations, joining all 4 dimensions to provide full geographic context.",
+      "nodeIds": ["endpoint:sql/business_queries.sql:geospatial-hotspots"]
+    }
+  ]
+}
