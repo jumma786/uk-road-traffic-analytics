@@ -2,19 +2,24 @@
 Export business query results to CSV files in the reports/ directory.
 
 Usage:
-    python scripts/export_reports.py --server YOUR_SERVER --database UK_Road_Traffic_DW
+    python scripts/export_reports.py
+    python scripts/export_reports.py --query covid_impact
+    python scripts/export_reports.py --server MY_SERVER --database MY_DB
 """
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 import pandas as pd
 import pyodbc
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from config.settings import SQL_SERVER, SQL_DATABASE, REPORTS_DIR
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-REPORTS_DIR = PROJECT_ROOT / "reports"
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
 QUERIES = {
     "regional_traffic_summary": """
@@ -131,6 +136,100 @@ QUERIES = {
         HAVING SUM(f.AllMotorVehicles) > 50000
         ORDER BY TotalTraffic DESC
     """,
+    "covid_impact": """
+        SELECT
+            d.Year,
+            SUM(f.CarsAndTaxis) AS Cars,
+            SUM(f.BusesAndCoaches) AS Buses,
+            SUM(f.LGVs) AS LGVs,
+            SUM(f.AllHGVs) AS HGVs,
+            SUM(f.PedalCycles) AS Cycles,
+            SUM(f.AllMotorVehicles) AS AllMotor
+        FROM FactTrafficFlowDirection f
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        WHERE d.Year BETWEEN 2019 AND 2023
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
+    "cycling_trends": """
+        SELECT
+            d.Year,
+            SUM(f.PedalCycles) AS TotalCycles,
+            SUM(f.AllMotorVehicles) AS TotalMotor,
+            ROUND(SUM(f.PedalCycles) * 100.0 /
+                NULLIF(SUM(f.AllMotorVehicles) + SUM(f.PedalCycles), 0), 4
+            ) AS CycleSharePct
+        FROM FactTrafficFlowDirection f
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
+    "lgv_ecommerce_trend": """
+        SELECT
+            d.Year,
+            SUM(f.LGVs) AS TotalLGVs,
+            SUM(f.AllMotorVehicles) AS TotalMotor,
+            ROUND(SUM(f.LGVs) * 100.0 /
+                NULLIF(SUM(f.AllMotorVehicles), 0), 2
+            ) AS LGV_SharePct
+        FROM FactTrafficFlowDirection f
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
+    "motorway_vs_aroad": """
+        SELECT
+            d.Year,
+            SUM(CASE WHEN cp.RoadCategory IN ('TM', 'PM')
+                THEN f.AllMotorVehicles ELSE 0 END) AS Motorway_Flow,
+            SUM(CASE WHEN cp.RoadCategory IN ('TA', 'PA')
+                THEN f.AllMotorVehicles ELSE 0 END) AS ARoad_Flow,
+            SUM(CASE WHEN cp.RoadCategory IN ('M', 'MB', 'MCU')
+                THEN f.AllMotorVehicles ELSE 0 END) AS Minor_Flow
+        FROM FactTrafficFlowDirection f
+        JOIN DimCountPoint cp ON f.CountPointKey = cp.CountPointKey
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
+    "hgv_axle_breakdown": """
+        SELECT
+            d.Year,
+            SUM(f.HGVs2RigidAxle) AS Rigid2,
+            SUM(f.HGVs3RigidAxle) AS Rigid3,
+            SUM(f.HGVs4OrMoreRigidAxle) AS Rigid4Plus,
+            SUM(f.HGVs3Or4ArticulatedAxle) AS Artic3_4,
+            SUM(f.HGVs5ArticulatedAxle) AS Artic5,
+            SUM(f.HGVs6ArticulatedAxle) AS Artic6,
+            SUM(f.AllHGVs) AS TotalHGV
+        FROM FactTrafficFlowDirection f
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
+    "bus_coach_decline": """
+        SELECT
+            d.Year,
+            SUM(f.BusesAndCoaches) AS TotalBuses,
+            SUM(f.AllMotorVehicles) AS TotalMotor,
+            ROUND(SUM(f.BusesAndCoaches) * 100.0 /
+                NULLIF(SUM(f.AllMotorVehicles), 0), 3) AS Bus_SharePct
+        FROM FactTrafficFlowDirection f
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
+    "motorcycle_trends": """
+        SELECT
+            d.Year,
+            SUM(f.TwoWheeledMotorVehicles) AS TotalMotorcycles,
+            ROUND(SUM(f.TwoWheeledMotorVehicles) * 100.0 /
+                NULLIF(SUM(f.AllMotorVehicles), 0), 3) AS Motorcycle_SharePct
+        FROM FactTrafficFlowDirection f
+        JOIN DimDate d ON f.DateKey = d.DateKey
+        GROUP BY d.Year
+        ORDER BY d.Year
+    """,
 }
 
 
@@ -142,14 +241,17 @@ def get_connection(server: str, database: str) -> pyodbc.Connection:
 
 def main():
     parser = argparse.ArgumentParser(description="Export business query results to CSV")
-    parser.add_argument("--server", required=True, help="SQL Server instance")
-    parser.add_argument("--database", default="UK_Road_Traffic_DW", help="Target database")
-    parser.add_argument("--query", choices=list(QUERIES.keys()), help="Run a single query (default: all)")
+    parser.add_argument("--server", default=SQL_SERVER, help="SQL Server instance")
+    parser.add_argument("--database", default=SQL_DATABASE, help="Target database")
+    parser.add_argument(
+        "--query", choices=list(QUERIES.keys()),
+        help="Run a single query (default: all)",
+    )
     args = parser.parse_args()
 
     REPORTS_DIR.mkdir(exist_ok=True)
 
-    print(f"Connecting to {args.server}/{args.database}...")
+    logger.info("Connecting to %s/%s...", args.server, args.database)
     conn = get_connection(args.server, args.database)
 
     queries_to_run = {args.query: QUERIES[args.query]} if args.query else QUERIES
@@ -159,12 +261,12 @@ def main():
         try:
             df = pd.read_sql(sql, conn)
             df.to_csv(output_path, index=False)
-            print(f"  {name}: {len(df)} rows -> {output_path.name}")
+            logger.info("  %s: %d rows -> %s", name, len(df), output_path.name)
         except Exception as e:
-            print(f"  {name}: ERROR - {e}", file=sys.stderr)
+            logger.error("  %s: ERROR - %s", name, e)
 
     conn.close()
-    print(f"\nDone. Reports saved to {REPORTS_DIR}/")
+    logger.info("Done. Reports saved to %s/", REPORTS_DIR)
 
 
 if __name__ == "__main__":
