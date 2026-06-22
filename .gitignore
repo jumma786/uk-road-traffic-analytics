@@ -14,6 +14,9 @@ data/raw/*.dbf
 data/raw/*.shx
 data/raw/*.prj
 
+# Dashboard aggregated data IS committed (small files)
+!data/dashboard/*.csv
+
 # Generated
 reports/charts/
 *.log
