@@ -100,8 +100,10 @@ Data sourced from [DfT Road Traffic Statistics](https://roadtraffic.dft.gov.uk) 
 ```bash
 git clone https://github.com/jumma786/uk-road-traffic-analytics.git
 cd uk-road-traffic-analytics
-pip install -r requirements.txt
-cp .env.example .env   # edit with your SQL Server details
+pip install -r requirements-full.txt    # full stack (ETL + API + dashboard)
+# OR
+pip install -r requirements.txt         # dashboard only (lightweight)
+cp .env.example .env                    # edit with your SQL Server details
 ```
 
 ### 2. Create the Database
