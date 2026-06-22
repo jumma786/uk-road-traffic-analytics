@@ -7,11 +7,17 @@
 
 ---
 
-## Live Dashboard
+## Live Demo
 
-**Streamlit Dashboard**: Run locally with `streamlit run src/dashboard/app.py` — opens at [http://localhost:8501](http://localhost:8501)
+**Streamlit Cloud**: [uk-road-traffic-analytics-pg67fcsmmq4qtmbtupeqpl.streamlit.app](https://uk-road-traffic-analytics-pg67fcsmmq4qtmbtupeqpl.streamlit.app/)
 
-**REST API**: Run with `uvicorn src.api.app:app --reload` — Swagger docs at [http://localhost:8000/docs](http://localhost:8000/docs)
+**Render**: [uk-road-traffic-analytics.onrender.com](https://uk-road-traffic-analytics.onrender.com)
+
+### Run Locally
+
+**Dashboard**: `streamlit run src/dashboard/app.py` — [http://localhost:8501](http://localhost:8501)
+
+**REST API**: `uvicorn src.api.app:app --reload` — Swagger docs at [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ### Dashboard Features
 
