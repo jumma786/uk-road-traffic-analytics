@@ -43,10 +43,12 @@ def validate_aadf(df: pd.DataFrame) -> dict:
         if bad_cats:
             issues["invalid_road_categories"] = list(bad_cats)
 
-    null_counts = df[REQUIRED_COLS].isnull().sum()
-    nulls = null_counts[null_counts > 0].to_dict()
-    if nulls:
-        issues["null_values"] = {k: int(v) for k, v in nulls.items()}
+    present_required = [c for c in REQUIRED_COLS if c in df.columns]
+    if present_required:
+        null_counts = df[present_required].isnull().sum()
+        nulls = null_counts[null_counts > 0].to_dict()
+        if nulls:
+            issues["null_values"] = {k: int(v) for k, v in nulls.items()}
 
     return issues
 

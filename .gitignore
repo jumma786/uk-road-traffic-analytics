@@ -2,6 +2,10 @@
 .env
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
 
 # Data files (too large for git)
 data/raw/*.csv
@@ -10,12 +14,23 @@ data/raw/*.dbf
 data/raw/*.shx
 data/raw/*.prj
 
+# Generated
+reports/charts/
+*.log
+
 # IDE
 .vscode/
 .idea/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Virtualenv
+.venv/
+venv/
+
+# Docker
+*.pid
 
 # OS
 Thumbs.db

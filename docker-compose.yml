@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file: .env
+    command: uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+
+  dashboard:
+    build: .
+    ports:
+      - "${STREAMLIT_PORT:-8501}:8501"
+    env_file: .env
+    command: streamlit run src/dashboard/app.py --server.port 8501 --server.address 0.0.0.0
